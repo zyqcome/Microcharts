@@ -7,9 +7,21 @@ namespace Microcharts
     using System.Collections.Generic;
     using System.Linq;
     using SkiaSharp;
+    using Xam.Animations;
 
     public abstract class Chart
     {
+        #region Constructors
+        
+        public Chart()
+        {
+            this.AddLayer(DrawBackground, Animations.FadeIn(TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(0)), Animations.FadeOut());
+            this.AddLayer(DrawForeground, Animations.FadeIn(TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(1)), Animations.FadeOut());
+            this.AddLayer(DrawCaption, Animations.FadeIn(TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2)), Animations.FadeOut());
+        }
+
+        #endregion
+
         #region Properties
 
         /// <summary>
@@ -98,12 +110,35 @@ namespace Microcharts
         /// <value>The internal max value.</value>
         protected float? InternalMaxValue { get; set; }
 
+        public IEnumerable<ChartLayer> Layers => this.layers;
+
+        #endregion
+
+        #region Fields
+
+        private List<ChartLayer> layers = new List<ChartLayer>();
+
         #endregion
 
         #region Methods
 
         /// <summary>
-        /// Draw the  graph onto the specified canvas.
+        /// Add a new layer.
+        /// </summary>
+        /// <param name="draw">The draw function for rendering this layer.</param>
+        /// <returns>The index of the layer.</returns>
+        protected int AddLayer(Action<SKCanvas, int, int> draw, IAnimation enter, IAnimation exit)
+        {
+            this.layers.Add(new ChartLayer(draw)
+            {
+                EnterAnimation = enter,
+                ExitAnimation = exit,
+            });
+            return this.layers.Count - 1;
+        }
+
+        /// <summary>
+        /// Draw the graph layers onto the specified canvas.
         /// </summary>
         /// <param name="canvas">The canvas.</param>
         /// <param name="width">The width.</param>
@@ -112,16 +147,39 @@ namespace Microcharts
         {
             canvas.Clear(this.BackgroundColor);
 
-            this.DrawContent(canvas, width, height);
+            foreach (var layer in layers)
+            {
+                layer.Draw(canvas, width, height);
+            }
         }
 
+        #region Layers
+
         /// <summary>
-        /// Draws the chart content.
+        /// The background content contains data that changes only when the number of entries, one of the entry labels/colors changed.
         /// </summary>
         /// <param name="canvas">The canvas.</param>
         /// <param name="width">The width.</param>
         /// <param name="height">The height.</param>
-        public abstract void DrawContent(SKCanvas canvas, int width, int height);
+        protected virtual void DrawBackground(SKCanvas canvas, int width, int height) { }
+
+        /// <summary>
+        /// The foreground contains the graph content, it will change everytime entries are updated.
+        /// </summary>
+        /// <param name="canvas">The canvas.</param>
+        /// <param name="width">The width.</param>
+        /// <param name="height">The height.</param>
+        protected virtual void DrawForeground(SKCanvas canvas, int width, int height) { }
+
+        /// <summary>
+        /// The labels should contains labels and descriptive data, it will change everytime entries are updated.
+        /// </summary>
+        /// <param name="canvas">The canvas.</param>
+        /// <param name="width">The width.</param>
+        /// <param name="height">The height.</param>
+        protected virtual void DrawCaption(SKCanvas canvas, int width, int height) { }
+
+        #endregion
 
         /// <summary>
         /// Draws caption elements on the right or left side of the chart.

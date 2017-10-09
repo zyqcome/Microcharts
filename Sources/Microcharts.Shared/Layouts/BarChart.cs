@@ -36,13 +36,22 @@ namespace Microcharts
 
         #region Methods
 
-        /// <summary>
-        /// Draws the content of the chart onto the specified canvas.
-        /// </summary>
-        /// <param name="canvas">The output canvas.</param>
-        /// <param name="width">The width of the chart.</param>
-        /// <param name="height">The height of the chart.</param>
-        public override void DrawContent(SKCanvas canvas, int width, int height)
+        #region Layers
+
+        protected override void DrawBackground(SKCanvas canvas, int width, int height)
+        {
+            var valueLabelSizes = MeasureValueLabels();
+            var footerHeight = CalculateFooterHeight(valueLabelSizes);
+            var headerHeight = CalculateHeaderHeight(valueLabelSizes);
+            var itemSize = CalculateItemSize(width, height, footerHeight, headerHeight);
+            var origin = CalculateYOrigin(itemSize.Height, headerHeight);
+            var points = this.CalculatePoints(itemSize, origin, headerHeight);
+            
+            this.DrawFooter(canvas, points, itemSize, height, footerHeight);
+            this.DrawBarAreas(canvas, points, itemSize, headerHeight);
+        }
+
+        protected override void DrawForeground(SKCanvas canvas, int width, int height)
         {
             var valueLabelSizes = MeasureValueLabels();
             var footerHeight = CalculateFooterHeight(valueLabelSizes);
@@ -51,12 +60,23 @@ namespace Microcharts
             var origin = CalculateYOrigin(itemSize.Height, headerHeight);
             var points = this.CalculatePoints(itemSize, origin, headerHeight);
 
-            this.DrawBarAreas(canvas, points, itemSize, headerHeight);
             this.DrawBars(canvas, points, itemSize, origin, headerHeight);
             this.DrawPoints(canvas, points);
-            this.DrawFooter(canvas, points, itemSize, height, footerHeight);
+        }
+
+        protected override void DrawCaption(SKCanvas canvas, int width, int height)
+        {
+            var valueLabelSizes = MeasureValueLabels();
+            var footerHeight = CalculateFooterHeight(valueLabelSizes);
+            var headerHeight = CalculateHeaderHeight(valueLabelSizes);
+            var itemSize = CalculateItemSize(width, height, footerHeight, headerHeight);
+            var origin = CalculateYOrigin(itemSize.Height, headerHeight);
+            var points = this.CalculatePoints(itemSize, origin, headerHeight);
+            
             this.DrawValueLabel(canvas, points, itemSize, height, valueLabelSizes);
         }
+
+        #endregion
 
         /// <summary>
         /// Draws the value bars.

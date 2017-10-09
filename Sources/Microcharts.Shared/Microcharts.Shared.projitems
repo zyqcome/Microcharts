@@ -14,6 +14,7 @@
     <Folder Include="$(MSBuildThisFileDirectory)Extensions\" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)ChartLayer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Helpers\RadialHelpers.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Layouts\BarChart.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Layouts\DonutChart.cs" />

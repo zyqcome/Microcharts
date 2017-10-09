@@ -46,7 +46,7 @@ namespace Microcharts
 
         #region Methods
 
-        public override void DrawContent(SKCanvas canvas, int width, int height)
+        protected override void DrawBackground(SKCanvas canvas, int width, int height)
         {
             var total = this.Entries.Count();
 

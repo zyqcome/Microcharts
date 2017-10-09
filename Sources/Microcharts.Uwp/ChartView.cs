@@ -1,33 +1,47 @@
 ﻿namespace Microcharts.Uwp
 {
-    using SkiaSharp.Views.UWP;
+    using System.Linq;
     using Windows.UI.Xaml;
+    using Windows.UI.Xaml.Controls;
 
-    public class ChartView : SKXamlCanvas
+    public class ChartView : Grid
     {
         public ChartView()
         {
-            this.PaintSurface += OnPaintCanvas;
+            this.layers =  new ChartLayerView[3];
+            for (int i = 0; i < this.layers.Length; i++)
+            {
+                var layer = new ChartLayerView()
+                {
+                    VerticalAlignment = VerticalAlignment.Stretch,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                };
+                this.layers[i] = layer;
+                this.Children.Add(layer);
+            }
         }
 
-        public static readonly DependencyProperty ChartProperty = DependencyProperty.Register(nameof(Chart), typeof(ChartView), typeof(Chart), new PropertyMetadata(null, new PropertyChangedCallback(OnLabelChanged)));
+        private ChartLayerView[] layers;
+
+        public static readonly DependencyProperty ChartProperty = DependencyProperty.Register(nameof(Chart), typeof(ChartView), typeof(Chart), new PropertyMetadata(null, new PropertyChangedCallback(OnChartChanged)));
 
         public Chart Chart
         {
             get { return (Chart)GetValue(ChartProperty); }
             set { SetValue(ChartProperty, value); }
         }
-
-
-        private static void OnLabelChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        
+        private static void OnChartChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var view = d as ChartView;
-            view.Invalidate();
-        }
+     
+            var chart = e.NewValue as Chart;
 
-        private void OnPaintCanvas(object sender, SKPaintSurfaceEventArgs e)
-        {
-            this.Chart.Draw(e.Surface.Canvas, e.Info.Width, e.Info.Height);
+            for (int i = 0; i < view.layers.Length; i++)
+            {
+                var layer = view.layers[i];
+                layer.Layer = chart?.Layers.ElementAt(i);
+            }
         }
     }
 }

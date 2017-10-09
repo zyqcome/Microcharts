@@ -21,13 +21,13 @@ namespace Microcharts
         /// Gets or sets the radius of the hole in the center of the chart.
         /// </summary>
         /// <value>The hole radius.</value>
-        public float HoleRadius { get; set; } = 0;
+        public float HoleRadius { get; set; } = 0.5f;
 
         #endregion
 
         #region Methods
 
-        public override void DrawContent(SKCanvas canvas, int width, int height)
+        protected override void DrawBackground(SKCanvas canvas, int width, int height)
         {
             this.DrawCaption(canvas, width, height);
             using (new SKAutoCanvasRestore(canvas))

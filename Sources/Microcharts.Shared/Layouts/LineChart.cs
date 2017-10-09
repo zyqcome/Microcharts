@@ -46,7 +46,21 @@ namespace Microcharts
 
         #region Methods
 
-        public override void DrawContent(SKCanvas canvas, int width, int height)
+        #region Layers
+
+        protected override void DrawBackground(SKCanvas canvas, int width, int height)
+        {
+            var valueLabelSizes = MeasureValueLabels();
+            var footerHeight = CalculateFooterHeight(valueLabelSizes);
+            var headerHeight = CalculateHeaderHeight(valueLabelSizes);
+            var itemSize = CalculateItemSize(width, height, footerHeight, headerHeight);
+            var origin = CalculateYOrigin(itemSize.Height, headerHeight);
+            var points = this.CalculatePoints(itemSize, origin, headerHeight);
+
+            this.DrawFooter(canvas, points, itemSize, height, footerHeight);
+        }
+
+        protected override void DrawForeground(SKCanvas canvas, int width, int height)
         {
             var valueLabelSizes = MeasureValueLabels();
             var footerHeight = CalculateFooterHeight(valueLabelSizes);
@@ -58,9 +72,21 @@ namespace Microcharts
             this.DrawArea(canvas, points, itemSize, origin);
             this.DrawLine(canvas, points, itemSize);
             this.DrawPoints(canvas, points);
-            this.DrawFooter(canvas, points, itemSize, height, footerHeight);
+        }
+
+        protected override void DrawCaption(SKCanvas canvas, int width, int height)
+        {
+            var valueLabelSizes = MeasureValueLabels();
+            var footerHeight = CalculateFooterHeight(valueLabelSizes);
+            var headerHeight = CalculateHeaderHeight(valueLabelSizes);
+            var itemSize = CalculateItemSize(width, height, footerHeight, headerHeight);
+            var origin = CalculateYOrigin(itemSize.Height, headerHeight);
+            var points = this.CalculatePoints(itemSize, origin, headerHeight);
+
             this.DrawValueLabel(canvas, points, itemSize, height, valueLabelSizes);
         }
+
+        #endregion
 
         protected void DrawLine(SKCanvas canvas, SKPoint[] points, SKSize itemSize)
         {

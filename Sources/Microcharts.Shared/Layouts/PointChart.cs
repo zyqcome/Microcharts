@@ -43,8 +43,22 @@ namespace Microcharts
 
             return headerHeight + ((this.MaxValue / this.ValueRange) * itemHeight);
         }
+    
+        #region Layers
 
-        public override void DrawContent(SKCanvas canvas, int width, int height)
+        protected override void DrawBackground(SKCanvas canvas, int width, int height)
+        {
+            var valueLabelSizes = this.MeasureValueLabels();
+            var footerHeight = this.CalculateFooterHeight(valueLabelSizes);
+            var headerHeight = this.CalculateHeaderHeight(valueLabelSizes);
+            var itemSize = this.CalculateItemSize(width, height, footerHeight, headerHeight);
+            var origin = this.CalculateYOrigin(itemSize.Height, headerHeight);
+            var points = this.CalculatePoints(itemSize, origin, headerHeight);
+
+            this.DrawFooter(canvas, points, itemSize, height, footerHeight);
+        }
+
+        protected override void DrawForeground(SKCanvas canvas, int width, int height)
         {
             var valueLabelSizes = this.MeasureValueLabels();
             var footerHeight = this.CalculateFooterHeight(valueLabelSizes);
@@ -55,9 +69,21 @@ namespace Microcharts
 
             this.DrawPointAreas(canvas, points, origin);
             this.DrawPoints(canvas, points);
-            this.DrawFooter(canvas, points, itemSize, height, footerHeight);
+        }
+
+        protected override void DrawCaption(SKCanvas canvas, int width, int height)
+        {
+            var valueLabelSizes = this.MeasureValueLabels();
+            var footerHeight = this.CalculateFooterHeight(valueLabelSizes);
+            var headerHeight = this.CalculateHeaderHeight(valueLabelSizes);
+            var itemSize = this.CalculateItemSize(width, height, footerHeight, headerHeight);
+            var origin = this.CalculateYOrigin(itemSize.Height, headerHeight);
+            var points = this.CalculatePoints(itemSize, origin, headerHeight);
+
             this.DrawValueLabel(canvas, points, itemSize, height, valueLabelSizes);
         }
+
+        #endregion
 
         protected SKSize CalculateItemSize(int width, int height, float footerHeight, float headerHeight)
         {

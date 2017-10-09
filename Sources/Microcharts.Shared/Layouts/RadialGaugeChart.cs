@@ -79,7 +79,7 @@ namespace Microcharts
             }
         }
 
-        public override void DrawContent(SKCanvas canvas, int width, int height)
+        protected override void DrawBackground(SKCanvas canvas, int width, int height)
         {
             this.DrawCaption(canvas, width, height);
 
