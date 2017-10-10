@@ -15,6 +15,7 @@
     <tags>xamarin forms ios android chart skia</tags>
     <dependencies>
         <group>
+            <dependency id=“Microcharts” version="$version$" />
             <dependency id="Xamarin.Forms" version="2.4.0.280" />
             <dependency id="System.ValueTuple" version="4.4.0" />
             <dependency id="SkiaSharp.Views.Forms" version="1.59.1.1" />

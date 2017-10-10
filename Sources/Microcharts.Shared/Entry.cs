@@ -18,7 +18,7 @@ namespace Microcharts
                 /// <param name="value">The entry value.</param>
                 public Entry(float value)
                 {
-                        this.Value = value;
+                     this.Value = value;
                 }
 
                 #endregion

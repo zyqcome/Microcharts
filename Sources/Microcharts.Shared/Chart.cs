@@ -8,11 +8,19 @@ namespace Microcharts
     using System.Linq;
     using SkiaSharp;
     using Xam.Animations;
+    using System.ComponentModel;
+    using System.Runtime.CompilerServices;
 
-    public abstract class Chart
+    /// <summary>
+    /// A chart.
+    /// </summary>
+    public abstract class Chart : INotifyPropertyChanged
     {
         #region Constructors
-        
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Microcharts.Chart"/> class.
+        /// </summary>
         public Chart()
         {
             this.AddLayer(DrawBackground, Animations.FadeIn(TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(0)), Animations.FadeOut());
@@ -22,31 +30,70 @@ namespace Microcharts
 
         #endregion
 
+        #region Fields
+
+        private IEnumerable<Entry> entries;
+
+        private List<ChartLayer> layers = new List<ChartLayer>();
+
+        private float margin = 20, labelTextSize = 16;
+
+        private SKColor backgroundColor = SKColors.White;
+
+        private float? internalMinValue, internalMaxValue;
+
+        #endregion
+
         #region Properties
 
         /// <summary>
         /// Gets or sets the global margin.
         /// </summary>
         /// <value>The margin.</value>
-        public float Margin { get; set; } = 20;
+        public float Margin
+        {
+            get => this.margin;
+            set => this.Set(ref this.margin, value);
+        }
 
         /// <summary>
         /// Gets or sets the text size of the labels.
         /// </summary>
         /// <value>The size of the label text.</value>
-        public float LabelTextSize { get; set; } = 16;
+        public float LabelTextSize
+        {
+            get => this.labelTextSize;
+            set => this.Set(ref this.labelTextSize, value);
+        }
 
         /// <summary>
         /// Gets or sets the color of the chart background.
         /// </summary>
         /// <value>The color of the background.</value>
-        public SKColor BackgroundColor { get; set; } = SKColors.White;
+        public SKColor BackgroundColor
+        {
+            get => this.backgroundColor;
+            set => this.Set(ref this.backgroundColor, value);
+        }
 
         /// <summary>
         /// Gets or sets the data entries.
         /// </summary>
         /// <value>The entries.</value>
-        public IEnumerable<Entry> Entries { get; set; }
+        public IEnumerable<Entry> Entries
+        {
+            get => this.entries;
+            set
+            {
+                var previousEntries = this.Entries;
+
+                if(this.Set(ref this.entries, value))
+                {
+                    this.RaisePropertyChanged(nameof(MinValue));
+                    this.RaisePropertyChanged(nameof(MaxValue));
+                }
+            }
+        }
 
         /// <summary>
         /// Gets or sets the minimum value from entries. If not defined, it will be the minimum between zero and the 
@@ -102,25 +149,65 @@ namespace Microcharts
         /// Gets or sets the internal minimum value (that can be null).
         /// </summary>
         /// <value>The internal minimum value.</value>
-        protected float? InternalMinValue { get; set; }
+        protected float? InternalMinValue
+        {
+            get => this.internalMinValue;
+            set
+            {
+                if (this.Set(ref this.internalMinValue, value))
+                {
+                    this.RaisePropertyChanged(nameof(MinValue));
+                }
+            }
+        }
 
         /// <summary>
         /// Gets or sets the internal max value (that can be null).
         /// </summary>
         /// <value>The internal max value.</value>
-        protected float? InternalMaxValue { get; set; }
+        protected float? InternalMaxValue
+        {
+            get => this.internalMaxValue;
+            set
+            {
+                if (this.Set(ref this.internalMaxValue, value))
+                {
+                    this.RaisePropertyChanged(nameof(MaxValue));
+                }
+            }
+        }
 
+        /// <summary>
+        /// Gets the layers.
+        /// </summary>
+        /// <value>The layers.</value>
         public IEnumerable<ChartLayer> Layers => this.layers;
 
         #endregion
 
-        #region Fields
+        #region Events
 
-        private List<ChartLayer> layers = new List<ChartLayer>();
+        public event PropertyChangedEventHandler PropertyChanged;
 
         #endregion
 
         #region Methods
+
+        /// <summary>
+        /// Draw the graph layers onto the specified canvas.
+        /// </summary>
+        /// <param name="canvas">The canvas.</param>
+        /// <param name="width">The width.</param>
+        /// <param name="height">The height.</param>
+        public void Draw(SKCanvas canvas, int width, int height)
+        {
+            canvas.Clear(this.BackgroundColor);
+
+            foreach (var layer in this.Layers)
+            {
+                layer.Draw(canvas, width, height);
+            }
+        }
 
         /// <summary>
         /// Add a new layer.
@@ -135,22 +222,6 @@ namespace Microcharts
                 ExitAnimation = exit,
             });
             return this.layers.Count - 1;
-        }
-
-        /// <summary>
-        /// Draw the graph layers onto the specified canvas.
-        /// </summary>
-        /// <param name="canvas">The canvas.</param>
-        /// <param name="width">The width.</param>
-        /// <param name="height">The height.</param>
-        public void Draw(SKCanvas canvas, int width, int height)
-        {
-            canvas.Clear(this.BackgroundColor);
-
-            foreach (var layer in layers)
-            {
-                layer.Draw(canvas, width, height);
-            }
         }
 
         #region Layers
@@ -178,6 +249,39 @@ namespace Microcharts
         /// <param name="width">The width.</param>
         /// <param name="height">The height.</param>
         protected virtual void DrawCaption(SKCanvas canvas, int width, int height) { }
+
+        #endregion
+
+        #region INotifyPropertyChanged
+
+        /// <summary>
+        /// Raises the property change.
+        /// </summary>
+        /// <param name="property">Property.</param>
+        protected void RaisePropertyChanged([CallerMemberName]string property = null)
+        {
+            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
+        }
+
+        /// <summary>
+        /// Set the specified field and raise a property change if new value is different.
+        /// </summary>
+        /// <returns>The set.</returns>
+        /// <param name="field">Field.</param>
+        /// <param name="value">Value.</param>
+        /// <param name="property">Property.</param>
+        /// <typeparam name="T">The 1st type parameter.</typeparam>
+        protected bool Set<T>(ref T field, T value, [CallerMemberName]string property = null)
+        {
+            if(!EqualityComparer<T>.Equals(field,property))
+            {
+                field = value;
+                this.RaisePropertyChanged(property);
+                return true;
+            }
+
+            return false;
+        }
 
         #endregion
 

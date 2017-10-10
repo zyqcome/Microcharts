@@ -23,7 +23,7 @@ namespace Microcharts
 
         public byte PointAreaAlpha { get; set; } = 100;
 
-        private float ValueRange => this.MaxValue - this.MinValue;
+        public float ValueRange => this.MaxValue - this.MinValue;
 
         #endregion
 

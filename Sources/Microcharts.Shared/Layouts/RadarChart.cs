@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Aloïs DENIEL. All rights reserved.
 // Licensed under the MIT License. See LICENSE in the project root for license information.
+using Xam.Animations;
 
 namespace Microcharts
 {
@@ -14,6 +15,16 @@ namespace Microcharts
     /// </summary>
     public class RadarChart : Chart
     {
+
+        #region Constructors
+
+        public RadarChart()
+        {
+            this.Layers.ElementAt(1).EnterAnimation = Animations.ScaleIn(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2));
+        }
+
+        #endregion
+
         #region Constants
 
         private const float Epsilon = 0.01f;
@@ -46,37 +57,42 @@ namespace Microcharts
 
         #region Methods
 
+        private float CalculateCaptionHeight()
+        {
+            return this.Entries.Max(x =>
+            {
+                var result = 0.0f;
+
+                var hasLabel = !string.IsNullOrEmpty(x.Label);
+                var hasValueLabel = !string.IsNullOrEmpty(x.ValueLabel);
+                if (hasLabel || hasValueLabel)
+                {
+                    var hasOffset = hasLabel && hasValueLabel;
+                    var captionMargin = this.LabelTextSize * 0.60f;
+                    var space = hasOffset ? captionMargin : 0;
+
+                    if (hasLabel)
+                    {
+                        result += this.LabelTextSize;
+                    }
+
+                    if (hasValueLabel)
+                    {
+                        result += this.LabelTextSize;
+                    }
+                }
+
+                return result;
+            });
+        }
+
         protected override void DrawBackground(SKCanvas canvas, int width, int height)
         {
             var total = this.Entries.Count();
 
             if (total > 0)
             {
-                var captionHeight = this.Entries.Max(x =>
-                {
-                    var result = 0.0f;
-
-                    var hasLabel = !string.IsNullOrEmpty(x.Label);
-                    var hasValueLabel = !string.IsNullOrEmpty(x.ValueLabel);
-                    if (hasLabel || hasValueLabel)
-                    {
-                        var hasOffset = hasLabel && hasValueLabel;
-                        var captionMargin = this.LabelTextSize * 0.60f;
-                        var space = hasOffset ? captionMargin : 0;
-
-                        if (hasLabel)
-                        {
-                            result += this.LabelTextSize;
-                        }
-
-                        if (hasValueLabel)
-                        {
-                            result += this.LabelTextSize;
-                        }
-                    }
-
-                    return result;
-                });
+                var captionHeight = this.CalculateCaptionHeight();
 
                 var center = new SKPoint(width / 2, height / 2);
                 var radius = ((Math.Min(width, height) - (2 * Margin)) / 2) - captionHeight;
@@ -110,8 +126,79 @@ namespace Microcharts
                     })
                     {
                         var borderPoint = this.GetPoint(this.MaxValue, center, angle, radius);
-                        canvas.DrawLine(point.X, point.Y, borderPoint.X, borderPoint.Y, paint);
+                        canvas.DrawLine(center.X, center.Y, borderPoint.X, borderPoint.Y, paint);
                     }
+                }
+            }
+        }
+
+        protected override void DrawCaption(SKCanvas canvas, int width, int height)
+        {
+            base.DrawCaption(canvas, width, height);
+
+            var total = this.Entries.Count();
+
+            if (total > 0)
+            {
+                var captionHeight = this.CalculateCaptionHeight();
+
+                var center = new SKPoint(width / 2, height / 2);
+                var radius = ((Math.Min(width, height) - (2 * Margin)) / 2) - captionHeight;
+                var rangeAngle = (float)((Math.PI * 2) / total);
+                var startAngle = (float)Math.PI;
+
+                for (int i = 0; i < total; i++)
+                {
+                    var angle = startAngle + (rangeAngle * i);
+                    var entry = this.Entries.ElementAt(i);
+
+                    // Labels
+                    var labelPoint = this.GetPoint(this.MaxValue, center, angle, radius + this.LabelTextSize + (this.PointSize / 2));
+                    var alignment = SKTextAlign.Left;
+
+                    if ((Math.Abs(angle - (startAngle + Math.PI)) < Epsilon) || (Math.Abs(angle - Math.PI) < Epsilon))
+                    {
+                        alignment = SKTextAlign.Center;
+                    }
+                    else if (angle > (float)(startAngle + Math.PI))
+                    {
+                        alignment = SKTextAlign.Right;
+                    }
+
+                    canvas.DrawCaptionLabels(entry.Label, entry.TextColor, entry.ValueLabel, entry.Color, this.LabelTextSize, labelPoint, alignment);
+                }
+            }
+        }
+
+        protected override void DrawForeground(SKCanvas canvas, int width, int height)
+        {
+            base.DrawForeground(canvas, width, height);
+
+            var total = this.Entries.Count();
+
+            if (total > 0)
+            {
+                var captionHeight = this.CalculateCaptionHeight();
+
+                var center = new SKPoint(width / 2, height / 2);
+                var radius = ((Math.Min(width, height) - (2 * Margin)) / 2) - captionHeight;
+                var rangeAngle = (float)((Math.PI * 2) / total);
+                var startAngle = (float)Math.PI;
+
+                var nextEntry = this.Entries.First();
+                var nextAngle = startAngle;
+                var nextPoint = this.GetPoint(nextEntry.Value, center, nextAngle, radius);
+
+                for (int i = 0; i < total; i++)
+                {
+                    var angle = nextAngle;
+                    var entry = nextEntry;
+                    var point = nextPoint;
+
+                    var nextIndex = (i + 1) % total;
+                    nextAngle = startAngle + (rangeAngle * nextIndex);
+                    nextEntry = this.Entries.ElementAt(nextIndex);
+                    nextPoint = this.GetPoint(nextEntry.Value, center, nextAngle, radius);
 
                     // Values points and lines
                     using (var paint = new SKPaint()
@@ -130,22 +217,8 @@ namespace Microcharts
                     canvas.DrawGradientLine(center, entry.Color.WithAlpha(0), point, entry.Color.WithAlpha((byte)(entry.Color.Alpha * 0.75f)), this.LineSize);
                     canvas.DrawGradientLine(point, entry.Color, nextPoint, nextEntry.Color, this.LineSize);
                     canvas.DrawPoint(point, entry.Color, this.PointSize, this.PointMode);
-
-                    // Labels
-                    var labelPoint = this.GetPoint(this.MaxValue, center, angle, radius + this.LabelTextSize  + (this.PointSize / 2));
-                    var alignment = SKTextAlign.Left;
-
-                    if ((Math.Abs(angle - (startAngle + Math.PI)) < Epsilon) || (Math.Abs(angle - Math.PI) < Epsilon))
-                    {
-                        alignment = SKTextAlign.Center;
-                    }
-                    else if (angle > (float)(startAngle + Math.PI))
-                    {
-                        alignment = SKTextAlign.Right;
-                    }
-
-                    canvas.DrawCaptionLabels(entry.Label, entry.TextColor, entry.ValueLabel, entry.Color, this.LabelTextSize, labelPoint, alignment);
                 }
+
             }
         }
 
