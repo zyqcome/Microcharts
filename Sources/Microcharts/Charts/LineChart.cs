@@ -55,6 +55,12 @@ namespace Microcharts
 
         #region Methods
 
+        /// <summary>
+        /// 绘制内容
+        /// </summary>
+        /// <param name="canvas"></param>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
         public override void DrawContent(SKCanvas canvas, int width, int height)
         {
             if (this.Entries != null)
@@ -71,11 +77,54 @@ namespace Microcharts
                 var origin = this.CalculateYOrigin(itemSize.Height, headerHeight);
                 var points = this.CalculatePoints(itemSize, origin, headerHeight);
 
+                //画阴影
                 this.DrawArea(canvas, points, itemSize, origin);
+                //画线
                 this.DrawLine(canvas, points, itemSize);
+
+                this.DrawXaxis(canvas, points, itemSize, origin);
+                //画点
                 this.DrawPoints(canvas, points);
+                //画上
                 this.DrawHeader(canvas, valueLabels, valueLabelSizes, points, itemSize, height, headerHeight);
+                //画脚
                 this.DrawFooter(canvas, labels, labelSizes, points, itemSize, height, footerHeight);
+            }
+        }
+
+        protected void DrawXaxis(SKCanvas canvas, SKPoint[] points, SKSize itemSize, float origin)
+        {
+            if (points.Length > 1 && this.LineMode != LineMode.None)
+            {
+                using (var paint = new SKPaint
+                {
+                    Style = SKPaintStyle.Stroke,
+                    Color = SKColors.White,
+                    StrokeWidth = this.LineSize,
+                    IsAntialias = true,
+                })
+                {
+                    using (var shader = this.CreateXGradient(points))
+                    {
+                        paint.Shader = shader;
+
+                        var path = new SKPath();
+
+                        //path.MoveTo(points.First());
+                        path.MoveTo(points.First().X, origin);
+
+                        var last = (this.LineMode == LineMode.Spline) ? points.Length - 1 : points.Length - 1;
+                        SKPoint sKPoint = new SKPoint()
+                        {
+                            X = points[last].X,
+                            Y = origin
+                        };
+                        path.LineTo(sKPoint);
+
+                        canvas.DrawPath(path, paint);
+                        canvas.DrawRect(SKRect.Create(point.X - (size / 2), point.Y - (size / 2), size, size), paint);
+                    }
+                }
             }
         }
 

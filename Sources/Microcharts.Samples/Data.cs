@@ -139,6 +139,8 @@ namespace Microcharts.Samples
                     LabelTextSize = 42,
                     PointMode = PointMode.Square,
                     PointSize = 18,
+                    ValueLabelOrientation = Orientation.Horizontal,
+                    LabelOrientation = Orientation.Horizontal
                 },
                 new DonutChart
                 {
