@@ -81,8 +81,12 @@ namespace Microcharts
                 this.DrawArea(canvas, points, itemSize, origin);
                 //画线
                 this.DrawLine(canvas, points, itemSize);
-
+                //画x轴
                 this.DrawXaxis(canvas, points, itemSize, origin);
+
+                //画y轴
+                this.DrawYaxis(canvas, points, itemSize, origin);
+
                 //画点
                 this.DrawPoints(canvas, points);
                 //画上
@@ -122,7 +126,100 @@ namespace Microcharts
                         path.LineTo(sKPoint);
 
                         canvas.DrawPath(path, paint);
-                        canvas.DrawRect(SKRect.Create(point.X - (size / 2), point.Y - (size / 2), size, size), paint);
+
+                        SKPoint[] sKPaints = new SKPoint[]
+                        {
+                            new SKPoint() { X = sKPoint.X , Y = sKPoint.Y - 12},
+                            new SKPoint() { X = sKPoint.X , Y = sKPoint.Y + 12},
+                            new SKPoint() { X = sKPoint.X + 30 , Y = sKPoint.Y},
+                        };
+                        //this.DrawPolygon(canvas, sKPaints);
+
+                        var pathP = new SKPath();
+
+                        pathP.MoveTo(sKPaints.First());                        
+
+                        for (int i = 1; i < 3; i++)
+                        {
+                            pathP.LineTo(sKPaints[i]);
+                        }
+
+                        pathP.Close();
+                        paint.Style = SKPaintStyle.Fill;
+                        canvas.DrawPath(pathP, paint);
+                    }
+                }
+            }
+        }
+
+        protected void DrawYaxis(SKCanvas canvas, SKPoint[] points, SKSize itemSize, float origin)
+        {
+            if (points.Length > 1 && this.LineMode != LineMode.None)
+            {
+                using (var paint = new SKPaint
+                {
+                    Style = SKPaintStyle.Stroke,
+                    Color = SKColors.White,
+                    StrokeWidth = this.LineSize,
+                    IsAntialias = true,
+                })
+                {
+                    using (var shader = this.CreateXGradient(points))
+                    {
+                        paint.Shader = shader;
+
+                        var path = new SKPath();
+                        
+                        var last = (this.LineMode == LineMode.Spline) ? points.Length - 1 : points.Length - 1;
+
+                        float yaxis_start = origin;
+                        float yaxis_end = 0;
+
+                        foreach (var item in points)
+                        {
+                            if (yaxis_start > item.Y)
+                            {
+                                yaxis_start = item.Y;
+                            }
+
+                            if (yaxis_end < item.Y)
+                            {
+                                yaxis_end = item.Y;
+                            }
+                        }
+
+                        //注意这里是反的
+                        SKPoint sKPoint = new SKPoint()
+                        {
+                            X = points.First().X,
+                            Y = origin,//yaxis_end,
+                        };
+
+                        path.MoveTo(points.First().X, yaxis_start); //
+                        path.LineTo(sKPoint);
+
+                        canvas.DrawPath(path, paint);
+
+                        SKPoint[] sKPaints = new SKPoint[]
+                        {
+                            new SKPoint() { X = points.First().X - 12, Y = yaxis_start },
+                            new SKPoint() { X = points.First().X + 12, Y = yaxis_start },
+                            new SKPoint() { X = points.First().X  , Y = yaxis_start - 30},
+                        };
+                        //this.DrawPolygon(canvas, sKPaints);
+
+                        var pathP = new SKPath();
+
+                        pathP.MoveTo(sKPaints.First());
+
+                        for (int i = 1; i < 3; i++)
+                        {
+                            pathP.LineTo(sKPaints[i]);
+                        }
+
+                        pathP.Close();
+                        paint.Style = SKPaintStyle.Fill;
+                        canvas.DrawPath(pathP, paint);
                     }
                 }
             }
@@ -164,6 +261,50 @@ namespace Microcharts
                             }
                         }
 
+                        canvas.DrawPath(path, paint);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 按点画多边行
+        /// </summary>
+        /// <param name="canvas"></param>
+        /// <param name="points"></param>
+        /// <param name="origin"></param>
+        protected void DrawPolygon(SKCanvas canvas, SKPoint[] points)
+        {
+            if (this.LineAreaAlpha > 0 && points.Length > 1)
+            {
+                using (var paint = new SKPaint
+                {
+                    Style = SKPaintStyle.Fill,
+                    //Color = SKColors.White,
+                    //IsAntialias = true,
+                    //Style = SKPaintStyle.Stroke,
+                    Color = SKColors.White,
+                    StrokeWidth = this.LineSize,
+                    IsAntialias = true,
+                })
+                {
+                    using (var shaderX = this.CreateXGradient(points, (byte)(this.LineAreaAlpha * this.AnimationProgress)))
+                    using (var shaderY = this.CreateYGradient(points, (byte)(this.LineAreaAlpha * this.AnimationProgress)))
+                    {
+                        paint.Shader = EnableYFadeOutGradient ? SKShader.CreateCompose(shaderY, shaderX, SKBlendMode.SrcOut) : shaderX;
+
+                        var path = new SKPath();
+
+                        path.MoveTo(points.First());
+
+                        var last = points.Length;
+
+                        for (int i = 1; i < last; i++)
+                        {
+                            path.LineTo(points[i]);
+                        }
+
+                        path.Close();
                         canvas.DrawPath(path, paint);
                     }
                 }
